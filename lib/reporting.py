@@ -41,7 +41,7 @@ def report_startup():
         xbmcvfs.mkdir(settings.datapath)
     with _get_file() as reportfile:
         reportfile.seek(0, os.SEEK_SET)
-        newline = "= " + L(RUNNING_VERSION).format(settings.useragent)
+        newline = str(str("= ") + str(L(RUNNING_VERSION))).format(settings.useragent)
         line_exists = any(newline in line for line in reportfile)
         if not line_exists:
             reportfile.seek(0, os.SEEK_END)
@@ -191,7 +191,12 @@ def _rotate_file():
     return True
 
 def _get_file(readonly=False):
-    return open(xbmc.translatePath(_get_filepath()), 'r' if readonly else 'a+')
+    #xbmc.log(str(_get_filepath())+'artwork_beef_reporting.py===>PHIL', level=xbmc.LOGINFO)
+    return open(xbmcvfs.translatePath(_get_filepath()), 'r' if readonly else 'a+')
+    #try:
+    #    return open(xbmcvfs.translatePath(_get_filepath()), 'r' if readonly else 'a+')
+    #except:
+    #    return open(str(_get_filepath()).replace('special://profile/','/home/pi/.kodi/userdata/'), 'r' if readonly else 'a+')
 
 def _exists(filetag=''):
     return xbmcvfs.exists(_get_filepath(filetag))

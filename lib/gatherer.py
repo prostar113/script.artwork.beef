@@ -9,6 +9,12 @@ from lib.libs.pykodi import localize as L, log
 from lib.libs.utils import SortedDisplay
 from lib.providers import ProviderError
 
+import sys
+if sys.version_info[0] >= 3:
+    unicode = bytes
+    basestring = bytes
+    basearttype = bytes
+
 MAX_ERRORS = 3
 TOO_MANY_ERRORS = 32031
 
@@ -22,7 +28,7 @@ class Gatherer(object):
         services_hit = False
         error = None
         mediaitem.forcedart = self.get_forced_artwork(mediaitem, not skipexisting)
-        existingtypes = [key for key, url in mediaitem.art.iteritems() if url]
+        existingtypes = [key for key, url in mediaitem.art.items() if url]
         existingtypes.extend(mediaitem.forcedart.keys())
         if skipexisting:
             if not fsonly and mediaitem.uniqueids and mediaitem.missingart:
@@ -39,7 +45,7 @@ class Gatherer(object):
             if 'poster' not in mediaitem.availableart:
                 mediaitem.availableart['poster'] = []
             mediaitem.availableart['poster'].extend(mediaitem.availableart['keyart'])
-        for arttype, imagelist in mediaitem.availableart.iteritems():
+        for arttype, imagelist in mediaitem.availableart.items():
             _sort_images(arttype, imagelist, mediaitem.sourcemedia, mediaitem.mediatype)
         return services_hit, error
 
@@ -52,7 +58,7 @@ class Gatherer(object):
             return {}
         resultimages = {}
         for provider in providers.forced.get(mediaitem.mediatype, ()):
-            for arttype, image in provider.get_exact_images(mediaitem).iteritems():
+            for arttype, image in provider.get_exact_images(mediaitem).items():
                 if arttype.startswith('season.'):
                     season = arttype.rsplit('.', 2)[1]
                     if int(season) not in mediaitem.seasons:
@@ -96,7 +102,7 @@ class Gatherer(object):
                     log("Error parsing provider response", xbmc.LOGWARNING)
                     log(traceback.format_exc(), xbmc.LOGWARNING)
                 continue
-            for arttype, artlist in providerimages.iteritems():
+            for arttype, artlist in providerimages.items():
                 if arttype.startswith('season.'):
                     season = arttype.rsplit('.', 2)[1]
                     if int(season) not in seasons:
@@ -121,7 +127,10 @@ def _sort_images(basearttype, imagelist, mediasource, mediatype):
         if mediasource != 'unknown':
             imagelist.sort(key=lambda image: 0 if image.get('subtype', SortedDisplay(None, '')).sort == mediasource else 1)
     imagelist.sort(key=lambda image: _preferredsource_sort(image, mediatype), reverse=True)
-    imagelist.sort(key=lambda image: _imagelanguage_sort(image, basearttype))
+    try:
+        imagelist.sort(key=lambda image: _imagelanguage_sort(image, basearttype))
+    except:
+        pass
 
 def _preferredsource_sort(image, mediatype):
     result = 1 if mediatypes.ispreferred_source(mediatype, image['provider'][0]) else 0

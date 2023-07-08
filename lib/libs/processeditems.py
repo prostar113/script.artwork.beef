@@ -74,7 +74,11 @@ class Database(object):
         dbpath = settings.datapath
         if not xbmcvfs.exists(dbpath):
             xbmcvfs.mkdir(dbpath)
-        dbpath = xbmc.translatePath(dbpath + databasename + '.db')
+        #dbpath = '/home/pi/.kodi/userdata/Database/MyVideos119.db'
+        #xbmc.log(str(dbpath)+'===>PHIL', level=xbmc.LOGINFO)
+        #xbmc.log(str(databasename)+'===>PHIL', level=xbmc.LOGINFO)
+        dbpath = xbmcvfs.translatePath(dbpath + databasename + '.db')
+        #xbmc.log(str()+'===>PHIL', level=xbmc.LOGINFO)
         self._conn = sqlite3.connect(dbpath)
         self._conn.row_factory = sqlite3.Row
         self._conn.text_factory = str

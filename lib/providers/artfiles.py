@@ -384,7 +384,7 @@ def getopentypes(existingtypes, arttype):
         if arttype_matches_base(arttype, exact)]
     missing = []
     nextstart = 0
-    for count in xrange(100):
+    for count in range(100):
         if not keys:
             nextstart = count
             break

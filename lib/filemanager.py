@@ -2,6 +2,7 @@ import os
 import re
 import threading
 import urllib
+from urllib.parse import quote_plus, quote, unquote
 try:
     import urllib.parse as urlparse
 except ImportError: # py2
@@ -156,7 +157,7 @@ class FileManager(object):
     def remove_deselected_files(self, mediaitem, assignedart=False):
         if self.debug:
             return
-        for arttype, newimage in mediaitem.selectedart.iteritems():
+        for arttype, newimage in mediaitem.selectedart.items():
             if newimage is not None:
                 continue
             if assignedart:
@@ -194,7 +195,7 @@ class FileManager(object):
         count = [0]
         def worker(path):
             try:
-                res, _ = self.doget(self.imagecachebase + urllib.quote(pykodi.quoteimage(path), ''), stream=True)
+                res, _ = self.doget(self.imagecachebase + quote(pykodi.quoteimage(path), ''), stream=True)
                 if res:
                     res.iter_content(chunk_size=1024)
                     res.close()

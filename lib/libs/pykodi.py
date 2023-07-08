@@ -6,7 +6,15 @@ import time
 import urllib
 import xbmc
 import xbmcaddon
+import xbmcvfs
 from datetime import datetime
+
+import sys
+if sys.version_info[0] >= 3:
+    unicode = bytes
+    basestring = bytes
+
+from urllib.parse import quote_plus, quote, unquote
 
 oldpython = sys.version_info < (2, 7)
 if oldpython:
@@ -69,7 +77,10 @@ def localize(messageid):
         result = get_main_addon().getLocalizedString(messageid)
     else:
         result = xbmc.getLocalizedString(messageid)
-    return result.encode('utf-8') if isinstance(result, unicode) else result
+    try:
+        return result.encode('utf-8') if isinstance(result, unicode) else result
+    except:
+        return result
 
 def get_conditional(conditional):
     return xbmc.getCondVisibility(conditional)
@@ -111,10 +122,10 @@ def execute_jsonrpc(jsonrpc_command):
         return json.loads(json_result.decode('utf-8', 'replace'), cls=UTF8JSONDecoder)
 
 def log(message, level=xbmc.LOGDEBUG, tag=None):
-    if is_addon_watched() and level < xbmc.LOGNOTICE:
+    if is_addon_watched() and level < xbmc.LOGINFO:
         # Messages from this add-on are being watched, elevate to NOTICE so Kodi logs it
         level_tag = _log_level_tag_lookup[level] + ': ' if level in _log_level_tag_lookup else ''
-        level = xbmc.LOGNOTICE
+        level = xbmc.LOGINFO
     else:
         level_tag = ''
 
@@ -131,7 +142,7 @@ def log(message, level=xbmc.LOGDEBUG, tag=None):
 
 def scrub_message(message):
     for string in _log_scrub_strings.values():
-        message = message.replace(string, "XXXXX")
+        message = message.replace(string,'XXXXX')
     return message
 
 def set_log_scrubstring(key, string):
@@ -154,14 +165,14 @@ def get_language(language_format=xbmc.ENGLISH_NAME, region=False):
 def unquoteimage(imagestring):
     # extracted thumbnail images need to keep their 'image://' encoding
     if imagestring.startswith('image://') and not imagestring.startswith(('image://video', 'image://music')):
-        return urllib.unquote(imagestring[8:-1])
+        return unquote(imagestring[8:-1])
     return imagestring
 
 def quoteimage(imagestring):
     if imagestring.startswith('image://'):
         return imagestring
     # Kodi goes lowercase and doesn't encode some chars
-    result = 'image://{0}/'.format(urllib.quote(imagestring, '()!'))
+    result = 'image://{0}/'.format(quote(imagestring, '()!'))
     result = re.sub(r'%[0-9A-F]{2}', lambda mo: mo.group().lower(), result)
     return result
 
@@ -170,7 +181,7 @@ def unquotearchive(filepath):
     if not filepath or not filepath.startswith(('rar://', 'zip://')):
         return filepath
     result = filepath[6:].split('/', 1)[0]
-    return urllib.unquote(result)
+    return unquote(result)
 
 def get_command(*first_arg_keys):
     command = {}
@@ -196,7 +207,12 @@ class Addon(xbmcaddon.Addon):
         self.version = self.getAddonInfo('version')
         self.path = self.getAddonInfo('path')
         self.datapath = self.getAddonInfo('profile') # WARN: This can change if Kodi profile changes
-        self.resourcespath = os.path.join(xbmc.translatePath(self.path).decode('utf-8'), u'resources')
+        #self.resourcespath = os.path.join('/home/pi/.kodi/addons/script.artwork.beef/resources')
+        #xbmc.log(str(self.resourcespath)+'===>PHIL', level=xbmc.LOGINFO)
+        try:
+            self.resourcespath = os.path.join(xbmcvfs.translatePath(self.path).decode('utf-8'), u'resources')
+        except:
+            self.resourcespath = os.path.join(xbmcvfs.translatePath(self.path), u'resources')
         if not os.path.isdir(self.resourcespath):
             self.resourcespath = None
 
@@ -268,7 +284,7 @@ class UTF8JSONDecoder(json.JSONDecoder):
 
     def _json_unicode_to_str(self, jsoninput):
         if isinstance(jsoninput, dict):
-            return dict((self._json_unicode_to_str(key), self._json_unicode_to_str(value)) for key, value in jsoninput.iteritems())
+            return dict((self._json_unicode_to_str(key), self._json_unicode_to_str(value)) for key, value in jsoninput.items())
         elif isinstance(jsoninput, list):
             return [self._json_unicode_to_str(item) for item in jsoninput]
         elif isinstance(jsoninput, unicode):

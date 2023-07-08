@@ -5,6 +5,13 @@ import os
 import re
 from datetime import timedelta
 
+import sys
+if sys.version_info[0] >= 3:
+    unicode = bytes
+    basestring = bytes
+
+from urllib.parse import quote_plus, quote, unquote
+
 from lib import cleaner, reporting
 from lib.artworkselection import prompt_for_artwork
 from lib.filemanager import FileManager, FileError
@@ -127,6 +134,7 @@ class ArtworkProcessor(object):
             busy = pykodi.get_busydialog()
             busy.create()
         if mediatype in mediatypes.artinfo and (mediatype not in mediatypes.audiotypes or get_kodi_version() >= 18):
+            #xbmc.log(str(dbid)+str(mediatype)+'===>PHIL', level=xbmc.LOGINFO)
             mediaitem = info.MediaItem(quickjson.get_item_details(dbid, mediatype))
             log("Processing {0} '{1}' {2}.".format(mediatype, mediaitem.label, 'automatically'
                 if mode == MODE_AUTO else 'manually'))
@@ -139,7 +147,7 @@ class ArtworkProcessor(object):
         self.init_run()
         if mediatype == mediatypes.EPISODE:
             series = quickjson.get_item_details(mediaitem.tvshowid, mediatypes.TVSHOW)
-            if not any(uniqueid in settings.autoadd_episodes for uniqueid in series['uniqueid'].itervalues()):
+            if not any(uniqueid in settings.autoadd_episodes for uniqueid in series['uniqueid'].values()):
                 mediaitem.skip_artwork = ['fanart']
 
         info.add_additional_iteminfo(mediaitem, self.processed, search)
@@ -174,6 +182,26 @@ class ArtworkProcessor(object):
         self._process_item(mediaitem, True, False)
         busy.close()
         if mediaitem.availableart or mediaitem.forcedart:
+            try:
+                test_var = mediaitem.availableart['landscape']
+                for i in mediaitem.availableart:
+                    if i == 'fanart':
+                        mediaitem.availableart.update(mediaitem.availableart[i])
+                        mediaitem.availableart['landscape'].update(mediaitem.availableart['fanart'])
+                        mediaitem.availableart['fanart'].update(mediaitem.availableart['landscape'])
+                        break
+            except:
+                for i in mediaitem.availableart:
+                    if i == 'fanart':
+                        mediaitem.availableart['landscape'] = mediaitem.availableart[i]
+                        break
+#                xbmc.log(str(i)+'===>PHIL', level=xbmc.LOGINFO)
+#                xbmc.log(str(mediaitem.availableart[i])+'===>PHIL', level=xbmc.LOGINFO)
+#            for i in mediaitem.availableart:
+#                xbmc.log(str(i)+'===>PHIL', level=xbmc.LOGINFO)
+#                xbmc.log(str(mediaitem.forcedart[i])+'===>PHIL', level=xbmc.LOGINFO)
+#            xbmc.log(str(mediaitem.forcedart)+'===>PHIL', level=xbmc.LOGINFO)
+#            xbmc.log(str(mediaitem.availableart)+'===>PHIL', level=xbmc.LOGINFO)
             availableart = dict(mediaitem.availableart)
             if mediaitem.mediatype == mediatypes.TVSHOW and 'fanart' in availableart:
                 # add unseasoned backdrops as manual-only options for each season fanart
@@ -304,7 +332,7 @@ class ArtworkProcessor(object):
             if singleitem:
                 header = L(NO_IDS_MESSAGE)
                 message = "{0} '{1}'".format(mediatype, mediaitem.label)
-                log(header + ": " + message, xbmc.LOGNOTICE)
+                log(header + ": " + message, xbmc.LOGINFO)
                 xbmcgui.Dialog().notification("Artwork Beef: " + header, message, xbmcgui.NOTIFICATION_INFO)
 
         if auto:
@@ -313,7 +341,7 @@ class ArtworkProcessor(object):
                 if not self.debug:
                     add_art_to_library(mediatype, mediaitem.seasons, mediaitem.dbid, cleaned)
                 mediaitem.art.update(cleaned)
-                mediaitem.art = dict(item for item in mediaitem.art.iteritems() if item[1])
+                mediaitem.art = dict(item for item in mediaitem.art.items() if item[1])
 
         mediaitem.missingart = list(info.iter_missing_arttypes(mediaitem, mediaitem.art))
 
@@ -321,7 +349,7 @@ class ArtworkProcessor(object):
 
         if auto:
             existingart = dict(mediaitem.art)
-            selectedart = dict((key, image['url']) for key, image in mediaitem.forcedart.iteritems())
+            selectedart = dict((key, image['url']) for key, image in mediaitem.forcedart.items())
             existingart.update(selectedart)
 
             # Then add the rest of the missing art
@@ -337,7 +365,24 @@ class ArtworkProcessor(object):
                 error = error or er
                 toset.update(mediaitem.downloadedart)
             if toset:
-                mediaitem.updatedart = list(set(mediaitem.updatedart + toset.keys()))
+                #xbmc.log(str(toset)+'artworkprocessor_===>ARTWORKBEEF_PHIL', level=xbmc.LOGINFO)
+                #xbmc.log(str(mediaitem)+'artworkprocessor_===>ARTWORKBEEF_PHIL', level=xbmc.LOGINFO)
+                #try:
+                #    xbmc.log(str(mediaitem.updatedart)+'mediaitem.updatedart_artworkprocessor_===>ARTWORKBEEF_PHIL', level=xbmc.LOGINFO)
+                #except:
+                #    pass
+                try:
+                    mediaitem.updatedart = {set(mediaitem.updatedart + toset.keys())}
+                    #xbmc.log('11111_artworkprocessor_===>ARTWORKBEEF_PHIL', level=xbmc.LOGINFO)
+                except:
+                    for i in toset:
+                        mediaitem.updatedart.append(i)
+                xbmc.log(str(toset)+'artworkprocessor_===>ARTWORKBEEF_PHIL', level=xbmc.LOGINFO)
+                #xbmc.log(str(mediaitem)+'artworkprocessor_===>ARTWORKBEEF_PHIL', level=xbmc.LOGINFO)
+                #try:
+                #    xbmc.log(str(mediaitem.updatedart)+'mediaitem.updatedart_artworkprocessor_===>ARTWORKBEEF_PHIL', level=xbmc.LOGINFO)
+                #except:
+                #    pass
                 if not self.debug:
                     add_art_to_library(mediatype, mediaitem.seasons, mediaitem.dbid, toset)
             self.cachelocal(mediaitem, toset)
@@ -362,7 +407,7 @@ class ArtworkProcessor(object):
                 mediaitem.error = msg
             log(msg, xbmc.LOGWARNING)
         if self.debug:
-            log(mediaitem, xbmc.LOGNOTICE)
+            log(mediaitem, xbmc.LOGINFO)
         return services_hit
 
     def cachelocal(self, mediaitem, toset):
@@ -424,7 +469,7 @@ class ArtworkProcessor(object):
             if artinfo['multiselect']:
                 existingurls = []
                 existingartnames = []
-                for art, url in existingart.iteritems():
+                for art, url in existingart.items():
                     if info.arttype_matches_base(art, missingart) and url:
                         existingurls.append(url)
                         existingartnames.append(art)
@@ -475,11 +520,11 @@ def add_art_to_library(mediatype, seasons, dbid, selectedart):
         if arttype.startswith('animated') and url and url.startswith('http'):
             selectedart[arttype] = None
     if mediatype == mediatypes.TVSHOW:
-        for season, season_id in seasons.iteritems():
+        for season, season_id in seasons.items():
             info.update_art_in_library(mediatypes.SEASON, season_id, dict((arttype.split('.')[2], url)
-                for arttype, url in selectedart.iteritems() if arttype.startswith('season.{0}.'.format(season))))
+                for arttype, url in selectedart.items() if arttype.startswith('season.{0}.'.format(season))))
         info.update_art_in_library(mediatype, dbid, dict((arttype, url)
-            for arttype, url in selectedart.iteritems() if '.' not in arttype))
+            for arttype, url in selectedart.items() if '.' not in arttype))
     else:
         info.update_art_in_library(mediatype, dbid, selectedart)
     info.remove_local_from_texturecache(selectedart.values())
@@ -519,7 +564,7 @@ def is_excluded(mediaitem):
 
 def tag_forcedandexisting_art(availableart, forcedart, existingart):
     typeinsert = {}
-    for exacttype, artlist in sorted(forcedart.iteritems(), key=lambda arttype: natural_sort(arttype[0])):
+    for exacttype, artlist in sorted(forcedart.items(), key=lambda arttype: natural_sort(arttype[0])):
         arttype = info.get_basetype(exacttype)
         if arttype not in availableart:
             availableart[arttype] = artlist
@@ -535,7 +580,7 @@ def tag_forcedandexisting_art(availableart, forcedart, existingart):
                     availableart[arttype].insert(typeinsert[arttype], image)
 
     typeinsert = {}
-    for exacttype, existingurl in existingart.iteritems():
+    for exacttype, existingurl in existingart.items():
         arttype = info.get_basetype(exacttype)
         if arttype in availableart:
             match = next((available for available in availableart[arttype] if available['url'] == existingurl), None)

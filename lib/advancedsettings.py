@@ -48,7 +48,7 @@ def set_arttypes(root, arttype_map):
     for key, artlist in arttype_map.items():
         if key not in mediatype_map:
             if key not in unsupported_types:
-                log("Can't set arttypes for '{0}' in advancedsettings.xml".format(key), xbmc.LOGNOTICE)
+                log("Can't set arttypes for '{0}' in advancedsettings.xml".format(key), xbmc.LOGINFO)
             continue
         typemap = mediatype_map[key]
         library_elem = root.find(typemap[1])
@@ -93,7 +93,7 @@ def save_backup():
         else:
             xbmcgui.Dialog().notification("Artwork Beef", L(BACKUP_UNSUCCESSFUL), xbmc.LOGWARNING)
         return result
-    log("advancedsettings.xml doesn't exist, can't save backup", xbmc.LOGNOTICE)
+    log("advancedsettings.xml doesn't exist, can't save backup", xbmc.LOGINFO)
     return True
 
 def restore_backup():

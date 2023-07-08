@@ -3,6 +3,11 @@ import xbmc
 import xbmcgui
 from itertools import chain
 
+try:
+    basestring
+except NameError:
+    basestring = bytes
+
 from lib import advancedsettings, cleaner, reporting
 from lib.artworkprocessor import ArtworkProcessor
 from lib.filemanager import FileManager, FileError
@@ -131,7 +136,7 @@ def remove_specific_arttypes():
     allitems = options[selected][1]()
     counter = {}
     types_to_remove = set()
-    for arttype, url in chain.from_iterable(d.get('art', {}).iteritems() for d in allitems):
+    for arttype, url in chain.from_iterable(d.get('art', {}).items() for d in allitems):
         if '.' in arttype: continue
         counter['* all'] = counter.get('* all', 0) + 1
         counter[arttype] = counter.get(arttype, 0) + 1
@@ -157,7 +162,7 @@ def make_local():
     def downloadforitem(mediaitem):
         try:
             fileman.downloadfor(mediaitem)
-            newart = dict((k, v) for k, v in mediaitem.downloadedart.iteritems()
+            newart = dict((k, v) for k, v in mediaitem.downloadedart.items()
                 if not v or not v.startswith('http'))
             for arttype in newart:
                 # remove old URL from texture cache

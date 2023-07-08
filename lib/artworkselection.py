@@ -19,7 +19,7 @@ def prompt_for_artwork(mediatype, medialabel, availableart, monitor):
         return None, None
 
     arttypes = []
-    for arttype, artlist in availableart.iteritems():
+    for arttype, artlist in availableart.items():
         if arttype.startswith('season.-1.'):
             # Ignore 'all' seasons artwork, as I can't set artwork for it with JSON
             continue
@@ -78,9 +78,12 @@ class ArtworkTypeSelector(xbmcgui.WindowXMLDialog):
                 listitem.setProperty('Addon.Summary', summary)
                 listitem.setPath(arttype['arttype'])
                 if arttype.get('url'):
-                    listitem.setIconImage(arttype['url'])
+                    #xbmc.log(str(arttype)+'artwork_selection_===>PHIL', level=xbmc.LOGINFO)
+                    try:
+                        listitem.setIconImage(arttype['url'])
                     # DEPRECATED: Above is deprecated in Jarvis, but still works through Krypton (at least)
-                    # listitem.setArt({'icon': arttype.get('url')})
+                    except:
+                        listitem.setArt({'icon': arttype['url']})
                 self.guilist.addItem(listitem)
         else:
             self.selected = None
@@ -92,7 +95,11 @@ class ArtworkTypeSelector(xbmcgui.WindowXMLDialog):
             self.close()
         elif controlid == 6:
             item = self.guilist.getSelectedItem()
-            self.selected = item.getfilename()
+            #xbmc.log(str(item.getPath())+'===>PHIL', level=xbmc.LOGINFO)
+            try:
+                self.selected = item.getfilename()
+            except:
+                self.selected = item.getPath()
             self.close()
         elif controlid == 7:
             self.close()
@@ -163,12 +170,20 @@ class ArtworkSelector(xbmcgui.WindowXMLDialog):
             listitem.setLabel2(summary)
             # DEPRECATED: Above Krypton and higher (only), below Jarvis and lower (only)
             listitem.setProperty('Addon.Summary', summary)
-            listitem.setIconImage(image['preview'])
+            try:
+                listitem.setIconImage(image['preview'])
             # DEPRECATED: Above is deprecated in Jarvis, but still works through Krypton (at least)
-            # listitem.setArt({'icon': image['preview']})
+            except:
+                listitem.setArt({'icon': image['preview']})
             listitem.setPath(image['url'])
             if image.get('existing'):
                 listitem.select(True)
+                #xbmc.log(str(image.get('title'))+'===>PHIL', level=xbmc.LOGINFO)
+                #xbmc.log(str(self.arttype+'.jpg')+'===>PHIL', level=xbmc.LOGINFO)
+                if 'landscape' in self.arttype and not 'landscape' in image.get('title'):
+                    listitem.select(False)
+                if 'fanart' in self.arttype and not 'fanart' in image.get('title'):
+                    listitem.select(False)
             self.guilist.addItem(listitem)
         self.setFocus(self.guilist)
 
@@ -178,10 +193,16 @@ class ArtworkSelector(xbmcgui.WindowXMLDialog):
             if self.multi:
                 if self.selected is None:
                     self.selected = ([], [])
-                self.toggleitemlists(item.getfilename(), item.isSelected())
+                try:
+                    self.toggleitemlists(item.getfilename(), item.isSelected())
+                except:
+                    self.toggleitemlists(item.getPath(), item.isSelected())
                 item.select(not item.isSelected())
             else:
-                self.selected = item.getfilename()
+                try:
+                    self.selected = item.getfilename()
+                except:
+                    self.selected = item.getPath()
                 self.close()
         elif controlid == 5:
             if self.multi and self.selected is None:

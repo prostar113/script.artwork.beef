@@ -6,6 +6,8 @@ from abc import ABCMeta
 from contextlib import closing
 import xml.etree.ElementTree as ET
 
+from urllib.parse import quote_plus, quote, unquote
+
 if sys.version_info < (2, 7):
     from xml.parsers.expat import ExpatError as ParseError
 else:
@@ -24,7 +26,7 @@ class NFOFileAbstractProvider(object):
         if isinstance(url, unicode):
             url = url.encode('utf-8')
         if url.startswith('http'):
-            url = urllib.quote(url, safe="%/:=&?~#+!$,;'@()*[]")
+            url = quote(url, safe="%/:=&?~#+!$,;'@()*[]")
         resultimage = {'url': url, 'provider': self.name, 'preview': url}
         resultimage['title'] = '<{0}>'.format(title)
         resultimage['rating'] = SortedDisplay(0, '')

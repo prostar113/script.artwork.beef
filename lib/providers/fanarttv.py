@@ -3,6 +3,8 @@ import urllib
 import xbmc
 from abc import ABCMeta, abstractmethod
 
+from urllib.parse import quote_plus, quote, unquote
+
 from lib.providers.base import AbstractImageProvider, cache, build_key_error
 from lib.libs import mediatypes
 from lib.libs.addonsettings import settings
@@ -95,7 +97,7 @@ class FanartTVSeriesProvider(FanartTVAbstractProvider):
 
     def _get_images(self, data):
         result = {}
-        for arttype, artlist in data.iteritems():
+        for arttype, artlist in data.items():
             if arttype not in self.artmap:
                 continue
             for image in artlist:
@@ -108,7 +110,7 @@ class FanartTVSeriesProvider(FanartTVAbstractProvider):
                     generaltype = 'keyart'
                 if generaltype not in result:
                     result[generaltype] = []
-                url = urllib.quote(image['url'], safe="%/:=&?~#+!$,;'@()*[]")
+                url = quote(image['url'], safe="%/:=&?~#+!$,;'@()*[]")
                 resultimage = self.build_image(url, arttype, image, 3.0)
                 if arttype == 'showbackground' and seasonnum is not None:
                     resultimage['hasseason'] = True
@@ -136,7 +138,7 @@ class FanartTVSeriesProvider(FanartTVAbstractProvider):
 
     def provides(self, types):
         types = set(x if not x.startswith('season.') else re.sub(r'[\d]', '%s', x) for x in types)
-        return any(x in types for x in self.artmap.itervalues())
+        return any(x in types for x in self.artmap.values())
 
 class FanartTVMovieProvider(FanartTVAbstractProvider):
     mediatype = mediatypes.MOVIE
@@ -159,7 +161,7 @@ class FanartTVMovieProvider(FanartTVAbstractProvider):
 
     def _get_images(self, data):
         result = {}
-        for arttype, artlist in data.iteritems():
+        for arttype, artlist in data.items():
             if arttype not in self.artmap:
                 continue
             for image in artlist:
@@ -168,7 +170,7 @@ class FanartTVMovieProvider(FanartTVAbstractProvider):
                     generaltype = 'keyart'
                 if artlist and generaltype not in result:
                     result[generaltype] = []
-                url = urllib.quote(image['url'], safe="%/:=&?~#+!$,;'@()*[]")
+                url = quote(image['url'], safe="%/:=&?~#+!$,;'@()*[]")
                 resultimage = self.build_image(url, arttype, image)
                 if arttype == 'moviedisc':
                     display = self.disctitles.get(image['disc_type']) or image['disc_type']
@@ -204,11 +206,11 @@ class FanartTVMusicVideoProvider(FanartTVAbstractProvider):
             if artlist and generaltype not in resultmap:
                 resultmap[generaltype] = []
             for image in artlist:
-                url = urllib.quote(image['url'], safe="%/:=&?~#+!$,;'@()*[]")
+                url = quote(image['url'], safe="%/:=&?~#+!$,;'@()*[]")
                 resultmap[generaltype].append(self.build_image(url, arttype, image))
 
         result = {}
-        for arttype, artlist in data.iteritems():
+        for arttype, artlist in data.items():
             if arttype != 'albums':
                 poofit(arttype, artlist, result)
             else:

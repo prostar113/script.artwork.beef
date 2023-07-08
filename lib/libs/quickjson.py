@@ -1,3 +1,4 @@
+import xbmc
 from itertools import chain
 
 from lib.libs import mediatypes, pykodi
@@ -42,8 +43,11 @@ def get_item_details(dbid, mediatype):
     assert mediatype in typemap
 
     mapped = typemap[mediatype]
-    basestr = 'VideoLibrary.Get{0}Details' if mediatype not in mediatypes.audiotypes else 'AudioLibrary.Get{0}Details'
+    #basestr = 'VideoLibrary.Get{0}Details' if mediatype not in mediatypes.audiotypes else 'AudioLibrary.Get{0}Details'
+    basestr = 'VideoLibrary.Get' + mapped[0] + 'Details' if mediatype not in mediatypes.audiotypes else 'AudioLibrary.Get' + mapped[0] + 'Details'
+    
     json_request = get_base_json_request(basestr.format(mapped[0]))
+
     json_request['params'][mediatype + 'id'] = dbid
     json_request['params']['properties'] = mapped[1]
     if mapped[2]:
